@@ -1,0 +1,19 @@
+---
+
+intended_user: "{{ ansible_user | default( ansible_env.USER ) }}"
+# If you want to deploy your own requirements.txt and requirements.yml
+the_template_dir: ''
+programming_packages:
+  - gcc
+  - git
+  - make
+  - python38-devel
+  - python38-cryptography
+
+# /tmp can be restricted by mount options
+pypi_cache: /usr/local/tmp
+pypi_method: http
+pypi_index_port: 8081
+# define pypi_trusted_host to enable pip.conf with a proxy
+# pypi_trusted_host: "{{ pypi_index_host }}"
+...

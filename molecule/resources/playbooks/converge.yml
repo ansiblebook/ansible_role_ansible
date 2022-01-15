@@ -1,0 +1,10 @@
+---
+# Standards: 0.2
+- name: Converge
+  hosts: all
+  become: true
+  tasks:
+    - name: "Run ansible_role_ansible"
+      include_role:
+        name: "ansible_role_ansible"
+...

@@ -1,0 +1,164 @@
+---
+# Configure python and ansible
+
+- name: Install programming packages
+  package:
+    name: "{{ programming_packages }}"
+    state: present
+    update_cache: true
+  tags:
+    - packages
+    - python
+
+- name: Create tmp directory for caching
+  file:
+    path: "{{ pypi_cache }}"
+    state: directory
+    mode: 0777
+  tags:
+    - pypi
+
+- name: Set the_dir default value
+  set_fact:
+    the_dir: /etc
+  tags:
+    - ansible
+
+- name: Get user home directory
+  getent:
+    database: passwd
+    key: "{{ intended_user }}"
+    split: ':'
+  tags:
+    - ansible
+
+- name: Set the_dir fact to the user's home directory
+  when: getent_result is defined
+  set_fact:
+    # getent_passwd is the output of the getent command
+    the_dir: getent_passwd[ansible_user][4]
+  tags:
+    - ansible
+
+- name: Set facts for creates arguments of shell tasks
+  set_fact:
+    collections_dir: "{{ the_dir }}/ansible/collections/ansible_collections/"
+    roles_dir: "{{ the_dir }}/ansible/roles/"
+  tags:
+    - ansible
+
+- name: Install proxy configuration in /etc/profile.d/proxy.sh
+  when: proxy_host is defined
+  template:
+    src: proxy.sh.j2
+    dest: /etc/profile.d/proxy.sh
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - proxy
+
+- name: Install Pip proxy configuration in /etc/pip.conf
+  when: pypi_trusted_host is defined or pypi_index is defined
+  template:
+    src: pip.conf.j2
+    dest: /etc/pip.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - pypi
+
+- name: Prepare pip
+  block:
+    - name: Clear pip_args
+      set_fact:
+        pip_args: ''
+
+    - name: Set pip_args
+      when: pypi_trusted_host is defined
+      set_fact:
+        pip_args: "{{ pip_args }} --trusted-host {{ pypi_trusted_host }}"
+
+    - name: Set cache_dir
+      when: pypi_cache is defined
+      set_fact:
+        pip_args: "{{ pip_args }} --cache-dir {{ pypi_cache }}"
+
+    - name: Set pypi options
+      when: pypi_index is defined
+      set_fact:
+        pip_args "{{ pip_args }} -i {{ pypi_index }}"
+  when: pip_args is not defined
+  tags:
+    - pypi
+
+- name: Create virtualenv with wheel package support
+  become: true
+  pip:
+    virtualenv: /usr/local
+    virtualenv_command: /bin/python3.8 -m venv
+    virtualenv_site_packages: true
+    name: wheel
+    extra_args: "{{ pip_args }}"
+  tags:
+    - python
+
+- name: Copy requirements
+  become: true
+  template:
+    src: "{{ the_template_dir }}{{ item }}"
+    dest: /tmp/
+    mode: 0644
+  loop:
+    - requirements.txt
+    - requirements.yml
+  tags:
+    - python
+    - ansible
+
+- name: Install local Python libraries
+  become: true
+  pip:
+    requirements: /tmp/requirements.txt
+    virtualenv: /usr/local
+    extra_args: "{{ pip_args }}"
+    umask: '0022'
+    state: "{{ desired_state | default('present', true) }}"
+  tags:
+    - python
+    - ansible
+
+- name: Set permissions on local binaries
+  file:
+    path: /usr/local/bin/
+    mode: 0755
+    recurse: true
+
+- name: Install Ansible collections
+  become: true
+  become_user: "{{ intended_user }}"
+  shell: |
+    export PATH=/usr/local/bin:$PATH
+    source /usr/local/bin/activate && \
+    ansible-galaxy collection install -r /tmp/requirements.yml
+  args:
+    creates: "{{ collections_dir }}"
+  tags:
+    - ansible
+    - collections
+
+- name: Install Ansible roles
+  become: true
+  become_user: "{{ intended_user }}"
+  shell: |
+    export PATH=/usr/local/bin:$PATH
+    source /usr/local/bin/activate && \
+    ansible-galaxy install {{ force_arg | default(omit) }} \
+    -r /tmp/requirements.yml
+  args:
+    creates: "{{ roles_dir }}"
+  tags:
+    - ansible
+    - roles
+...

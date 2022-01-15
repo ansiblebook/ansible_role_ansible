@@ -1,0 +1,5 @@
+---
+
+- name: RedHat-like Linux
+  when: ansible_os_family == 'RedHat'
+  include_tasks: redhat.yml

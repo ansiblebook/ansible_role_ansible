@@ -1,0 +1,10 @@
+---
+collections:
+  - ansible.posix
+  - community.docker
+
+roles:
+  - src: https://github.com/ansiblebook/ansible_role_ssh.git
+    scm: git
+    name: ssh
+...

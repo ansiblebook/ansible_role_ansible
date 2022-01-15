@@ -1,0 +1,27 @@
+---
+# Standards: 0.2
+galaxy_info:
+  role_name: ansible_role_ansible
+  namespace: ansiblebook
+  author: Bas Meijer
+  description: Install Ansible
+  company: "O'Reilly"
+
+  license: MIT
+
+  min_ansible_version: 2.11.0
+
+  platforms:
+    - name: EL
+      versions:
+        - 8
+    - name: Fedora
+      versions:
+        - ALL
+  galaxy_tags:
+    - system
+    - security
+    - hardening
+
+dependencies: []
+...

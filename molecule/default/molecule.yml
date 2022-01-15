@@ -1,0 +1,28 @@
+---
+# Standards: 0.2
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+platforms:
+  - name: ansible-redhat
+    image: quay.io/centos/centos:stream8
+    command: /sbin/init
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      stdout_callback: yaml
+      executable: /bin/bash
+  playbooks:
+    converge: ../resources/playbooks/converge.yml
+...
