@@ -36,7 +36,7 @@
   when: getent_result is defined
   set_fact:
     # getent_passwd is the output of the getent command
-    the_dir: getent_passwd[ansible_user][4]
+    the_dir: getent_passwd[intended_user][4]
   tags:
     - ansible
 
