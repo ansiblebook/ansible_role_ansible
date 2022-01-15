@@ -2,6 +2,8 @@
 # Standards: 0.2
 - name: Converge
   hosts: all
+  vars:
+    intended_user: root
   tasks:
     - name: "Run ansible role"
       include_role:
