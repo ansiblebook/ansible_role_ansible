@@ -1,8 +1,10 @@
 ---
-
+# intended_user is the target user of ansible
 intended_user: "{{ ansible_user | default( ansible_env.USER ) }}"
 # If you want to deploy your own requirements.txt and requirements.yml
 the_template_dir: ''
+
+# to build python libraries with native bindings
 programming_packages:
   - gcc
   - git
@@ -12,8 +14,13 @@ programming_packages:
 
 # /tmp can be restricted by mount options
 pypi_cache: /usr/local/tmp
+
+# Use https when you can
 pypi_method: http
+
+# Use 443 for https
 pypi_index_port: 8081
+
 # define pypi_trusted_host to enable pip.conf with a proxy
 # pypi_trusted_host: "{{ pypi_index_host }}"
 ...
