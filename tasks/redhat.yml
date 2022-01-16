@@ -143,7 +143,7 @@
     source /usr/local/bin/activate && \
     ansible-galaxy collection install -r /tmp/requirements.yml
   args:
-    creates: "{{ collections_dir }}"
+    creates: "{{ collections_dir }}/ansible/posix/shippable.yml"
   tags:
     - ansible
     - collections
@@ -157,7 +157,7 @@
     ansible-galaxy install {{ force_arg | default(omit) }} \
     -r /tmp/requirements.yml
   args:
-    creates: "{{ roles_dir }}"
+    creates: "{{ roles_dir }}/ssh/meta/main.yml"
   tags:
     - ansible
     - roles
