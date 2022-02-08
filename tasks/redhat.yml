@@ -18,6 +18,15 @@
   tags:
     - pypi
 
+- name: Create Ansible directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - "{{ collections_dir }}"
+    - "{{ roles_dir }}"
+
 - name: Set the_dir default value
   set_fact:
     the_dir: /etc
@@ -43,7 +52,6 @@
 - name: Set facts for creates arguments of shell tasks
   set_fact:
     collections_dir: "{{ the_dir }}/ansible/collections/ansible_collections/"
-    roles_dir: "{{ the_dir }}/ansible/roles/"
   tags:
     - ansible
 
@@ -101,6 +109,7 @@
     virtualenv_site_packages: true
     name: wheel
     extra_args: "{{ pip_args }}"
+    umask: '0022'
   tags:
     - python
 
@@ -133,15 +142,18 @@
   file:
     path: /usr/local/bin/
     mode: 0755
+    seuser: system_u
     recurse: true
 
 - name: Install Ansible collections
   become: true
-  become_user: "{{ intended_user }}"
   shell: |
     export PATH=/usr/local/bin:$PATH
+    umask 0022
     source /usr/local/bin/activate && \
-    ansible-galaxy collection install -r /tmp/requirements.yml
+    ansible-galaxy collection install \
+    -r /tmp/requirements.yml \
+    -p {{ collections_dir }}
   args:
     creates: "{{ collections_dir }}/ansible/posix/shippable.yml"
   tags:
@@ -150,12 +162,13 @@
 
 - name: Install Ansible roles
   become: true
-  become_user: "{{ intended_user }}"
   shell: |
     export PATH=/usr/local/bin:$PATH
+    umask 0022
     source /usr/local/bin/activate && \
-    ansible-galaxy install {{ force_arg | default(omit) }} \
-    -r /tmp/requirements.yml
+    ansible-galaxy install \
+    -r /tmp/requirements.yml \
+    -p {{ roles_dir }}
   args:
     creates: "{{ roles_dir }}/ssh/meta/main.yml"
   tags:

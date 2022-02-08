@@ -3,6 +3,8 @@
 intended_user: "{{ ansible_user | default( ansible_env.USER ) }}"
 # If you want to deploy your own requirements.txt and requirements.yml
 the_template_dir: ''
+roles_dir: '/etc/ansible/roles/'
+collections_dir: '/etc/ansible/collections/'
 
 # to build python libraries with native bindings
 programming_packages:
