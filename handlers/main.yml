@@ -1,0 +1,9 @@
+---
+
+- name: Restart fapolicyd
+  become: true
+  systemd:
+    name: fapolicyd
+    state: restarted
+
+...

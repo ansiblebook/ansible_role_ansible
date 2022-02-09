@@ -14,7 +14,7 @@
   file:
     path: "{{ pypi_cache }}"
     state: directory
-    mode: 0777
+    mode: '1777'
   tags:
     - pypi
 
@@ -113,6 +113,11 @@
   tags:
     - python
 
+- name: Set permissions on virtualenv config
+  file:
+    path: /usr/local/pyvenv.cfg
+    mode: u=rwX,g=rX,o=rX
+
 - name: Copy requirements
   become: true
   template:
@@ -138,12 +143,48 @@
     - python
     - ansible
 
-- name: Set permissions on local binaries
+- name: Set permissions on local applications
   file:
-    path: /usr/local/bin/
-    mode: 0755
-    seuser: system_u
+    path: "/usr/local/{{ item }}"
+    mode: u=rwx,g=rx,o=rx
     recurse: true
+  loop:
+    - bin/
+    - lib/
+    - lib64/
+
+- name: Collect the list of services
+  service_facts:
+
+- name: Select local applications
+  command: ls -1 /usr/local/bin/
+  register: local_apps
+  when:
+    - ansible_facts.services is defined
+    - "'fapolicyd.service' in ansible_facts.services"
+
+- name: Grant local applications permission
+  command: "fapolicyd-cli --file add /usr/local/bin/{{ item }}"
+  loop: "{{ local_apps.stdout_lines }}"
+  register: add
+  failed_when: false
+  changed_when: true
+  when:
+    - ansible_facts.services is defined
+    - "'fapolicyd.service' in ansible_facts.services"
+  notify:
+    - Restart fapolicyd
+
+- name: Update fapolicyd
+  become: true
+  when:
+    - ansible_facts.services is defined
+    - "'fapolicyd.service' in ansible_facts.services"
+  command: fapolicyd-cli --update
+  changed_when: true
+
+- name: Flush handlers
+  meta: flush_handlers
 
 - name: Install Ansible collections
   become: true
@@ -166,7 +207,7 @@
     export PATH=/usr/local/bin:$PATH
     umask 0022
     source /usr/local/bin/activate && \
-    ansible-galaxy install \
+    ansible-galaxy install -f \
     -r /tmp/requirements.yml \
     -p {{ roles_dir }}
   args:
