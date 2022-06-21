@@ -6,7 +6,6 @@ black==21.9b0
 docker>=4.3.1
 docker-compose==1.23.1
 pycodestyle==2.7.0
-pycodestyle==2.7.0
 coverage==6.2
 pylint==2.10.2
 flake8==3.9.2
